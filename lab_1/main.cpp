@@ -8,10 +8,11 @@
 typedef unsigned char u8;
 typedef uint32_t      u32;
 
-
-#define ERR_NOT_PTR            1
-#define ERR_INVALID_INPUT_SIZE 2
-#define ERR_INVALID_INPUT_CHAR 3
+#define FALSE                  0
+#define TRUE                   1
+#define ERR_NOT_PTR            100
+#define ERR_INVALID_INPUT_SIZE 101
+#define ERR_INVALID_INPUT_CHAR 103
 
 
 class BF
@@ -22,9 +23,9 @@ private:
     size_t sizebf = 0;
     u32*   bfunc  = nullptr;
 public:
-    BF();
     BF(const int in_nvar, const u8 in_type);
     BF(const u8* in_str);
+    BF(const BF& in_other);
     ~BF();
 
     u32 weight();
@@ -35,6 +36,8 @@ public:
     friend std::istream& operator >> (std::istream&, BF&);
     void print_bf_nbit();
 };
+
+
 int gen_balanced_num(int in_nbits) {
     {
         std::random_device rd;
@@ -148,6 +151,17 @@ BF::BF(const u8* in_str){
     }
 }
 
+BF::BF(const BF& in_other) {
+    nvar = in_other.nvar;
+    nbit = in_other.nbit;
+    sizebf = in_other.sizebf;
+    bfunc = new u32[sizebf]();
+    
+    for (u32 i = 0; i < sizebf;++i) {
+        bfunc[i] = in_other.bfunc[i];
+    }
+}
+
 BF::~BF(){
     nvar   = 0;
     nbit   = 0;
@@ -234,7 +248,7 @@ void BF::print_bf_nbit() {
 
 BF generate_justice_bfunc(u32 in_var)
 {
-    while (1)
+    while (TRUE)
     {
         BF t    = BF(in_var, 2);
         u32 wei = t.weight();
@@ -275,9 +289,16 @@ int main(void)
     }
     */
     {
+        /* тест генерации правильной функции и копирования */
         BF a = generate_justice_bfunc(5);
         std::cout << a.justice() << "\n";
+        
+        BF copy = BF(a);
+        std::cout << a << std::endl;
+        std::cout << copy << std::endl;
     }
+
+
     return 0;
 }
 /*
