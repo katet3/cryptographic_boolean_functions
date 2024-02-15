@@ -57,7 +57,6 @@ int gen_balanced_num(int in_nbits) {
             res = (res << 1) | bit;
         }
 
-        std::cout << res << "\n";
         return res;
     }
 }
@@ -91,27 +90,40 @@ BF::BF(const int in_nvar, const u8 in_type) {
        2 - ввод
        3 - случайные
     */
+    u32 i = 0;
     switch (in_type)
     {
         case 0:
             nvar = in_nvar;
-            nbit = 1 << nvar;
-            sizebf = (((1 << nvar)-1) >> 5) + 1;
+            nbit = (1 << nvar)-1;
+            sizebf = (nbit >> 5) + 1;
             bfunc = new u32[sizebf]();
             break;
         case 1:
             nvar = in_nvar;
-            nbit = 1 << nvar;
-            sizebf = (((1 << nvar) - 1) >> 5) + 1;
+            nbit = (1 << nvar)-1;
+            sizebf = (nbit >> 5) + 1;
             bfunc = new u32[sizebf]();
-            for (u32 i = 0; i < sizebf; ++i) bfunc[i] = ~bfunc[i];
+
+            /* заполнение памяти */
+            for (i = 0; i < nbit/32; ++i)
+                bfunc[i] = ~bfunc[i];
+            bfunc[i] = ~bfunc[i];
+            bfunc[i] = bfunc[i] >> (32 - (nbit+1 % 32));
+            
             break;
         case 2:
             nvar = in_nvar;
-            nbit = 1 << nvar;
-            sizebf = (((1 << nvar) - 1) >> 5) + 1;
+            nbit = (1 << nvar)-1;
+            sizebf = (nbit >> 5) + 1;
             bfunc = new u32[sizebf]();
-            for (u32 i = 0; i < sizebf; ++i) bfunc[i] = gen_balanced_num(nbit);
+            
+            /* заполнение памяти */
+            for (i = 0; i < nbit/32; ++i)
+                bfunc[i] = gen_balanced_num(32);
+            bfunc[i] = gen_balanced_num(32);
+            bfunc[i] = bfunc[i] >> (32 - (nbit+1 % 32));
+        
             break;
         default:
             break;
@@ -129,9 +141,9 @@ BF::BF(const u8* in_str){
     for (; j < N; ++i) {
         j = 1 << i;
     }
-    nbit   = j;
+    nbit   = j-1;
     nvar   = i - 2;
-    sizebf = (((1 << nvar)) >> 5)+1;
+    sizebf = (nbit >> 5) + 1;
     bfunc  = new u32[sizebf]();
 
     for (u32 j = 0; j < N; j++)
@@ -186,15 +198,15 @@ u32 BF::weight(){
 }
 
 float BF::justice(){
-    return this->weight() / float(this->nbit);
+    return this->weight() / float(this->nbit+1);
 }
 
 std::ostream& operator<<(std::ostream& in_out, const BF& in_bfunc)
 {
     for (u32 i = 0; i < in_bfunc.sizebf; ++i)
     {
-        for (u32 nbit = 0; nbit < 32; ++nbit) {
-            in_out << (((1 << nbit) & in_bfunc.bfunc[i]) ? '1' : '0');
+        for (u32 n_bit = 0; n_bit < 32; ++n_bit) {
+            in_out << (((1 << n_bit) & in_bfunc.bfunc[i]) ? '1' : '0');
         }
         in_out << " ";
     }
@@ -208,7 +220,7 @@ std::istream& operator>>(std::istream& in_cin, BF& in_bfunc)
     in_cin >> s;
     
     size_t len = s.length();
-    if (in_bfunc.nbit < len){
+    if (in_bfunc.nbit < len-1){
         error_accept(ERR_INVALID_INPUT_SIZE);
     }
     
@@ -259,45 +271,183 @@ BF generate_justice_bfunc(u32 in_var)
 
 int main(void)
 {
-    /*
     {
-        u8 s[] = "11111111111111111111111111111111";
-        BF b = BF(s);
-        std::cout << b << std::endl;
-    }
-    */
-
-    /* Тест ввода, вывода, веса, справедливости */
-    /*
-    {
-        BF a = BF(6,0);
-        std::cout << a << std::endl;
-        std::cin >> a;
-        std::cout << a << std::endl;
-        std::cout << a.weight() << "\n";
-        std::cout << a.justice() << "\n";
-        std::cout << "END \n";
-    }
-    */
-    /*
-    {
-        BF a = BF(5, 2);
-        std::cout << a << std::endl;
-        std::cout << a.weight() << "\n";
-        std::cout << a.justice() << "\n";
-        std::cout << "END \n";
-    }
-    */
-    {
-        /* тест генерации правильной функции и копирования */
-        BF a = generate_justice_bfunc(5);
-        std::cout << a.justice() << "\n";
+        std::cout << "|------------------------------|" << std::endl;
         
-        BF copy = BF(a);
+        std::cout << "Case 1: BF(4, 0)" << std::endl;
+        BF a = BF(4, 0);
+        std::cout << "bfunc: ";
         std::cout << a << std::endl;
-        std::cout << copy << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
     }
 
+    {
+        std::cout << "|------------------------------|" << std::endl;
+        
+        std::cout << "Case 2: BF(4, 1)" << std::endl;
+        BF a = BF(4, 1);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+        
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+        
+        std::cout << "Case 3: BF(4, 2)" << std::endl;
+        BF a = BF(4, 2);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+
+        std::cout << "Case 4: BF(6, 0)" << std::endl;
+        BF a = BF(6, 0);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+
+        std::cout << "Case 5: BF(6, 1)" << std::endl;
+        BF a = BF(6, 1);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+
+        std::cout << "Case 6: BF(6, 2)" << std::endl;
+        BF a = BF(6, 2);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << "Case 7: BF(u32*)" << std::endl;
+        
+        u8 s[] = "11111111111111110111111111111111";
+        std::cout << "u32*:  ";
+        std::cout << s << std::endl;
+
+        BF a = BF(s);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << "Case 8: BF(BF&)" << std::endl;
+
+        BF b = BF(4,2);
+        std::cout << "bfunc: ";
+        std::cout << b << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << b.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << b.justice() << std::endl;
+
+        BF a = BF(b);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+
+        std::cout << "Case 9: INPUT B(4, 0)" << std::endl;
+        BF a = BF(4, 0);
+        std::cin >> a;
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+        std::cout << "OUTPUT: ";
+        std::cout << a << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
+
+    {
+        std::cout << "|------------------------------|" << std::endl;
+
+        std::cout << "Case 10: gen justice for 5 var" << std::endl;
+        BF a = generate_justice_bfunc(5);
+        std::cout << "bfunc: ";
+        std::cout << a << std::endl;
+        std::cout << "bfunc weight: ";
+        std::cout << a.weight() << std::endl;
+        std::cout << "bfunc justice: ";
+        std::cout << a.justice() << std::endl;
+        std::cout << "OUTPUT: ";
+        std::cout << a << std::endl;
+
+        std::cout << "|------------------------------|" << std::endl;
+        std::cout << std::endl;
+    }
 
     return 0;
 }
